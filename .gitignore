@@ -1,0 +1,100 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+*.coverprofile
+coverage.html
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Config files (keep example files)
+config.yaml
+config.dev.yaml
+config.test.yaml
+config.prod.yaml
+config.local.yaml
+*.local.yaml
+
+# JWT keys (keep directory and README, but ignore key files)
+keys/*.pem
+keys/*.key
+keys/*.p12
+keys/*.jks
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# IDE - GoLand / IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IDE - Other
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Build output
+bin/
+dist/
+build/
+__debug_bin*
+*.a
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Air (live reload tool)
+tmp/
+.air.toml
+
+# Test files
+testdata/
+*.test.json
