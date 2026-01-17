@@ -1,4 +1,4 @@
-package usecase
+package service
 
 import (
 	"context"
@@ -11,19 +11,19 @@ import (
 )
 
 // LoginUseCase 登录用例
-type LoginUseCase struct {
+type AuthService struct {
 	userRepo repository.UserRepository
 }
 
-// NewLoginUseCase 创建登录用例实例
-func NewLoginUseCase(userRepo repository.UserRepository) *LoginUseCase {
-	return &LoginUseCase{
+// NewAuthService 创建认证服务实例
+func NewAuthService(userRepo repository.UserRepository) *AuthService {
+	return &AuthService{
 		userRepo: userRepo,
 	}
 }
 
-// Execute 执行登录
-func (uc *LoginUseCase) Execute(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
+// Login 登录
+func (uc *AuthService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
 	// // 根据用户名查找用户
 	// user, err := uc.userRepo.FindByUsername(ctx, req.Username)
 	// if err != nil {
@@ -53,10 +53,10 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req dto.LoginRequest) (*dto
 	return &dto.LoginResponse{
 		Token: token,
 		User: dto.UserResponse{
-			ID:       1,
-			Username: "test",
-			Email:    "test@test.com",
-			Status:   1,
+			ID:     1,
+			Name:   "test",
+			Email:  "test@test.com",
+			Status: 1,
 		},
 		ExpiresIn: int64(24 * time.Hour.Seconds()), // 24小时
 	}, nil

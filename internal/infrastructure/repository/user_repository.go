@@ -10,20 +10,20 @@ import (
 	domainRepo "FLOWGO/internal/domain/repository"
 )
 
-// userRepositoryImpl 用户仓储实现
-type userRepositoryImpl struct {
+// userRepository 用户仓储实现
+type userRepository struct {
 	db *gorm.DB
 }
 
 // NewUserRepository 创建用户仓储实例
 func NewUserRepository(db *gorm.DB) domainRepo.UserRepository {
-	return &userRepositoryImpl{
+	return &userRepository{
 		db: db,
 	}
 }
 
 // FindByID 根据ID查找
-func (r *userRepositoryImpl) FindByID(ctx context.Context, id uint64) (*entity.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id uint64) (*entity.User, error) {
 	var user entity.User
 	err := r.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	if err == gorm.ErrRecordNotFound {
@@ -36,7 +36,7 @@ func (r *userRepositoryImpl) FindByID(ctx context.Context, id uint64) (*entity.U
 }
 
 // FindByUsername 根据用户名查找
-func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
+func (r *userRepository) FindByUsername(ctx context.Context, username string) (*entity.User, error) {
 	var user entity.User
 	err := r.db.WithContext(ctx).Where("username = ?", username).First(&user).Error
 	if err == gorm.ErrRecordNotFound {
@@ -49,7 +49,7 @@ func (r *userRepositoryImpl) FindByUsername(ctx context.Context, username string
 }
 
 // FindByEmail 根据邮箱查找
-func (r *userRepositoryImpl) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
 	var user entity.User
 	err := r.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err == gorm.ErrRecordNotFound {
@@ -62,7 +62,7 @@ func (r *userRepositoryImpl) FindByEmail(ctx context.Context, email string) (*en
 }
 
 // ExistsByUsername 检查用户名是否存在
-func (r *userRepositoryImpl) ExistsByUsername(ctx context.Context, username string) (bool, error) {
+func (r *userRepository) ExistsByUsername(ctx context.Context, username string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&entity.User{}).
 		Where("username = ?", username).
@@ -71,7 +71,7 @@ func (r *userRepositoryImpl) ExistsByUsername(ctx context.Context, username stri
 }
 
 // ExistsByEmail 检查邮箱是否存在
-func (r *userRepositoryImpl) ExistsByEmail(ctx context.Context, email string) (bool, error) {
+func (r *userRepository) ExistsByEmail(ctx context.Context, email string) (bool, error) {
 	var count int64
 	err := r.db.WithContext(ctx).Model(&entity.User{}).
 		Where("email = ?", email).
@@ -80,7 +80,7 @@ func (r *userRepositoryImpl) ExistsByEmail(ctx context.Context, email string) (b
 }
 
 // Create 创建
-func (r *userRepositoryImpl) Create(ctx context.Context, user *entity.User) error {
+func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	now := time.Now()
 	user.CreatedAt = now
 	user.UpdatedAt = now
@@ -88,13 +88,13 @@ func (r *userRepositoryImpl) Create(ctx context.Context, user *entity.User) erro
 }
 
 // Update 更新
-func (r *userRepositoryImpl) Update(ctx context.Context, user *entity.User) error {
+func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
 	user.UpdatedAt = time.Now()
 	return r.db.WithContext(ctx).Save(user).Error
 }
 
 // Delete 删除（软删除）
-func (r *userRepositoryImpl) Delete(ctx context.Context, id uint64) error {
+func (r *userRepository) Delete(ctx context.Context, id uint64) error {
 	now := time.Now()
 	return r.db.WithContext(ctx).Model(&entity.User{}).
 		Where("id = ?", id).
@@ -102,7 +102,7 @@ func (r *userRepositoryImpl) Delete(ctx context.Context, id uint64) error {
 }
 
 // List 列表查询
-func (r *userRepositoryImpl) List(ctx context.Context, page, pageSize int) ([]*entity.User, int64, error) {
+func (r *userRepository) List(ctx context.Context, page, pageSize int) ([]*entity.User, int64, error) {
 	var users []*entity.User
 	var total int64
 

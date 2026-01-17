@@ -1,17 +1,20 @@
 package router
 
 import (
-	"FLOWGO/internal/application/usecase"
-	"FLOWGO/internal/infrastructure/database"
-	"FLOWGO/internal/infrastructure/repository"
 	"FLOWGO/internal/interfaces/http/handler"
+	"FLOWGO/internal/interfaces/http/handler/devops"
 	"FLOWGO/internal/interfaces/http/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 // SetupRouter 设置路由
-func SetupRouter() *gin.Engine {
+func SetupRouter(
+	authHandler *handler.AuthHandler,
+	userHandler *handler.UserHandler,
+	projectHandler *handler.ProjectsHandler,
+	devopsHandler *devops.DevOpsHandler,
+) *gin.Engine {
 	r := gin.New()
 
 	// 中间件
@@ -23,30 +26,6 @@ func SetupRouter() *gin.Engine {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
-
-	// 依赖注入
-	// 用户相关
-	userRepo := repository.NewUserRepository(database.DB)
-	createUserUseCase := usecase.NewCreateUserUseCase(userRepo)
-	getUserUseCase := usecase.NewGetUserUseCase(userRepo)
-	listUsersUseCase := usecase.NewListUsersUseCase(userRepo)
-	loginUseCase := usecase.NewLoginUseCase(userRepo)
-
-	// 项目相关
-	projectRepo := repository.NewProjectsRepository(database.DB)
-	createProjectUseCase := usecase.NewCreateProjectsCase(projectRepo)
-	updateProjectUseCase := usecase.NewUpdateProjectsCase(projectRepo)
-	deleteProjectUseCase := usecase.NewDeleteProjectsCase(projectRepo)
-	getProjectUseCase := usecase.NewGetProjectsCase(projectRepo)
-	listProjectsUseCase := usecase.NewListProjectsCase(projectRepo)
-
-	// 团队相关
-	teamRepo := repository.NewTeamRepository(database.DB)
-	projectsTeamUseCase := usecase.NewProjectsTeamUseCase(teamRepo)
-
-	projectHandler := handler.NewProjectsHandler(createProjectUseCase, updateProjectUseCase, getProjectUseCase, listProjectsUseCase, deleteProjectUseCase, projectsTeamUseCase)
-	userHandler := handler.NewUserHandler(createUserUseCase, getUserUseCase, listUsersUseCase)
-	authHandler := handler.NewAuthHandler(loginUseCase)
 
 	// API v1 路由组
 	v1 := r.Group("/api/v1")
@@ -67,6 +46,23 @@ func SetupRouter() *gin.Engine {
 			projects.PUT("/:id", projectHandler.UpdateProject)
 			projects.DELETE("/:id", projectHandler.DeleteProject)
 			projects.GET("/teams/available", projectHandler.ProjectTeams)
+			projects.GET("/users/available/:id", projectHandler.ProjectAvailableUsers)
+			projects.POST("/:id/users", projectHandler.AddProjectUsers)
+			projects.DELETE("/:id/users/:uid", projectHandler.RemoveProjectUser)
+		}
+
+		// DevOps 路由 (全局)
+		devops := v1.Group("/devops")
+		devops.Use(middleware.Auth())
+		{
+			devops.POST("/config", devopsHandler.ConfigRepo)
+			devops.GET("/summary", devopsHandler.GetSummary)
+		}
+
+		// Webhook 路由 (一般不需要认证，或者有专门的签名验证)
+		webhooks := v1.Group("/webhooks")
+		{
+			webhooks.POST("/github", devopsHandler.HandleGitHubWebhook)
 		}
 
 		// 用户相关路由

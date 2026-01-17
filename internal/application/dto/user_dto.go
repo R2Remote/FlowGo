@@ -2,7 +2,7 @@ package dto
 
 // CreateUserRequest 创建用户请求
 type CreateUserRequest struct {
-	Username string `json:"username" binding:"required,min=3,max=20"`
+	Name     string `json:"name" binding:"required,min=3,max=20"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
@@ -15,10 +15,13 @@ type UpdateUserRequest struct {
 
 // UserResponse 用户响应
 type UserResponse struct {
-	ID       uint64 `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Status   int    `json:"status"`
+	ID     uint64 `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"email"`
+	Avatar string `json:"avatar"`
+	TeamID uint64 `json:"team_id"`
+	Role   string `json:"role"`
+	Status int    `json:"status"`
 }
 
 // UserListResponse 用户列表响应

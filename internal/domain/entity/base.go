@@ -4,10 +4,10 @@ import "time"
 
 // BaseEntity 基础实体，包含通用字段
 type BaseEntity struct {
-	ID        uint64     `json:"id"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+	ID        uint64
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt *time.Time
 }
 
 // IsDeleted 检查实体是否已删除
