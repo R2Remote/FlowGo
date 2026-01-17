@@ -4,20 +4,20 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"FLOWGO/internal/application/dto"
-	"FLOWGO/internal/application/usecase"
+	"FLOWGO/internal/application/service"
 	apperrors "FLOWGO/pkg/errors"
 )
 
 // AuthHandler 认证处理器
 type AuthHandler struct {
 	BaseHandler
-	loginUseCase *usecase.LoginUseCase
+	authService *service.AuthService
 }
 
 // NewAuthHandler 创建认证处理器实例
-func NewAuthHandler(loginUseCase *usecase.LoginUseCase) *AuthHandler {
+func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	return &AuthHandler{
-		loginUseCase: loginUseCase,
+		authService: authService,
 	}
 }
 
@@ -38,7 +38,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	result, err := h.loginUseCase.Execute(c.Request.Context(), req)
+	result, err := h.authService.Login(c.Request.Context(), req)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			h.HandleError(c, appErr.Code, appErr.Message)

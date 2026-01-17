@@ -6,28 +6,20 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"FLOWGO/internal/application/dto"
-	"FLOWGO/internal/application/usecase"
+	"FLOWGO/internal/application/service"
 	apperrors "FLOWGO/pkg/errors"
 )
 
 // UserHandler 用户处理器
 type UserHandler struct {
 	BaseHandler
-	createUserUseCase *usecase.CreateUserUseCase
-	getUserUseCase    *usecase.GetUserUseCase
-	listUsersUseCase  *usecase.ListUsersUseCase
+	userService *service.UserService
 }
 
 // NewUserHandler 创建用户处理器实例
-func NewUserHandler(
-	createUserUseCase *usecase.CreateUserUseCase,
-	getUserUseCase *usecase.GetUserUseCase,
-	listUsersUseCase *usecase.ListUsersUseCase,
-) *UserHandler {
+func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{
-		createUserUseCase: createUserUseCase,
-		getUserUseCase:    getUserUseCase,
-		listUsersUseCase:  listUsersUseCase,
+		userService: userService,
 	}
 }
 
@@ -48,7 +40,7 @@ func (h *UserHandler) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.createUserUseCase.Execute(c.Request.Context(), req)
+	user, err := h.userService.CreateUser(c.Request.Context(), req)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			h.HandleError(c, appErr.Code, appErr.Message)
@@ -79,7 +71,7 @@ func (h *UserHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.getUserUseCase.Execute(c.Request.Context(), id)
+	user, err := h.userService.GetUser(c.Request.Context(), id)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			h.HandleError(c, appErr.Code, appErr.Message)
@@ -109,7 +101,7 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 		return
 	}
 
-	result, err := h.listUsersUseCase.Execute(c.Request.Context(), req)
+	result, err := h.userService.ListUsers(c.Request.Context(), req)
 	if err != nil {
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			h.HandleError(c, appErr.Code, appErr.Message)

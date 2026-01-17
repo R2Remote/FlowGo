@@ -8,7 +8,7 @@ import (
 type CreateProjectRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description" binding:"required"`
-	OwnerId     uint64 `json:"owner_id" binding:"required"`
+	OwnerID     uint64 `json:"owner_id"`
 }
 
 // CreateProjectResponse 创建项目响应
@@ -21,37 +21,29 @@ type UpdateProjectRequest struct {
 	ID          uint64     `json:"id" binding:"required"`
 	Name        string     `json:"name" binding:"required"`
 	Description string     `json:"description" binding:"required"`
-	OwnerId     uint64     `json:"ownerId" binding:"required"`
-	Status      string     `json:"status" binding:"required"`
+	OwnerID     uint64     `json:"owner_id" binding:"required"`
+	Status      int        `json:"status" binding:"required"`
 	Deadline    utils.Time `json:"deadline" binding:"required"`
-	StartDate   utils.Time `json:"startDate" binding:"required"`
-	Members     int        `json:"members" binding:"required"`
-	Progress    int        `json:"progress" binding:"required"`
-	Priority    string     `json:"priority" binding:"required"`
-	Starred     bool       `json:"starred" binding:"required"`
-	Archived    bool       `json:"archived" binding:"required"`
-	CoverImage  string     `json:"coverImage" binding:"omitempty"`
-	TeamIds     []uint64   `json:"teamIds" binding:"omitempty"`
+	StartDate   utils.Time `json:"start_date" binding:"required"`
+	Priority    int        `json:"priority" binding:"required"`
+	CoverImage  string     `json:"cover_image" binding:"omitempty"`
+	TeamIds     []uint64   `json:"team_ids" binding:"omitempty"`
 	Tags        []string   `json:"tags" binding:"omitempty"`
 }
 
 // UpdateProjectResponse 更新项目响应
 type UpdateProjectResponse struct {
 	ID          uint64     `json:"id"`
-	TeamIds     []uint64   `json:"teamIds"`
+	TeamIds     []uint64   `json:"team_ids"`
 	Tags        []string   `json:"tags"`
-	Members     int        `json:"members"`
-	Progress    int        `json:"progress"`
-	Priority    string     `json:"priority"`
-	Starred     bool       `json:"starred"`
-	Archived    bool       `json:"archived"`
-	CoverImage  string     `json:"coverImage"`
+	Priority    int        `json:"priority"`
+	CoverImage  string     `json:"cover_image"`
 	Deadline    utils.Time `json:"deadline"`
-	StartDate   utils.Time `json:"startDate"`
+	StartDate   utils.Time `json:"start_date"`
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
-	OwnerId     uint64     `json:"ownerId"`
-	Status      string     `json:"status"`
+	OwnerID     uint64     `json:"owner_id"`
+	Status      int        `json:"status"`
 }
 
 // DeleteProjectRequest 删除项目请求
@@ -71,19 +63,20 @@ type GetProjectRequest struct {
 
 // GetProjectResponse 获取项目响应
 type GetProjectResponse struct {
-	ID          uint64     `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	OwnerId     uint64     `json:"owner_id"`
-	Status      string     `json:"status"`
-	Deadline    utils.Time `json:"deadline"`
-	StartDate   utils.Time `json:"start_date"`
-	Members     int        `json:"members"`
-	Progress    int        `json:"progress"`
-	Priority    string     `json:"priority"`
-	Starred     bool       `json:"starred"`
-	Archived    bool       `json:"archived"`
-	CoverImage  string     `json:"cover_image"`
+	ID          uint64          `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	OwnerId     uint64          `json:"owner_id"`
+	Status      int             `json:"status"`
+	Deadline    utils.Time      `json:"deadline"`
+	StartDate   utils.Time      `json:"start_date"`
+	Progress    int             `json:"progress"`
+	Priority    int             `json:"priority"`
+	CoverImage  string          `json:"cover_image"`
+	Tags        []string        `json:"tags"`
+	TeamIds     []uint64        `json:"team_ids"`
+	Users       []*UserResponse `json:"users"`
+	CreatedAt   utils.Time      `json:"created_at"`
 }
 
 // ProjectListResponse 项目列表响应
@@ -98,12 +91,11 @@ type ProjectResponse struct {
 	Name        string     `json:"name"`
 	Description string     `json:"description"`
 	OwnerId     uint64     `json:"owner_id"`
-	Status      string     `json:"status"`
+	Status      int        `json:"status"`
 	Deadline    utils.Time `json:"deadline"`
 	StartDate   utils.Time `json:"start_date"`
-	Members     int        `json:"members"`
 	Progress    int        `json:"progress"`
-	Priority    string     `json:"priority"`
+	Priority    int        `json:"priority"`
 }
 
 // ProjectTeamsResponse 项目团队响应
@@ -115,4 +107,16 @@ type ProjectTeamsResponse struct {
 type TeamResponse struct {
 	ID   uint64 `json:"id"`
 	Name string `json:"name"`
+}
+
+type ProjectUsersRequest struct {
+	ID uint64 `uri:"id" binding:"required"`
+}
+
+type AddProjectUsersRequest struct {
+	Users []uint64 `json:"users" binding:"required"`
+}
+
+type ProjectUsersResponse struct {
+	Users []*UserResponse `json:"users"`
 }

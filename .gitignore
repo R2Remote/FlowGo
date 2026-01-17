@@ -25,11 +25,8 @@ go.work.sum
 .env.local
 .env.*.local
 
-# Config files (keep example files)
+# Config files (keep example)
 config.yaml
-config.dev.yaml
-config.test.yaml
-config.prod.yaml
 config.local.yaml
 *.local.yaml
 
@@ -41,6 +38,8 @@ keys/*.jks
 
 # IDE - VSCode
 .vscode/
+!.vscode/launch.json
+!.vscode/settings.json
 *.code-workspace
 
 # IDE - GoLand / IntelliJ
@@ -98,3 +97,9 @@ tmp/
 # Test files
 testdata/
 *.test.json
+
+# MD files
+*.md
+
+#HTTP requests
+*.http
