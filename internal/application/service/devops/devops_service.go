@@ -176,10 +176,11 @@ func (s *DevOpsService) TriggerDeployment(ctx context.Context, deployType string
 	scriptName := "/home/deploy_backend.sh" // Default
 	commitMsg := "Manual Deployment Trigger"
 
-	if deployType == "frontend" {
+	switch deployType {
+	case "frontend":
 		scriptName = "/home/deploy_frontend.sh"
 		commitMsg = "Frontend Deployment"
-	} else if deployType == "backend" {
+	case "backend":
 		scriptName = "/home/deploy_backend.sh"
 		commitMsg = "Backend Deployment"
 	}
