@@ -8,6 +8,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"os/exec"
+	"strings"
+	"time"
 )
 
 type DevOpsService struct {
@@ -106,9 +109,14 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 	if err != nil {
 		return errors.New("查询仓库配置失败")
 	}
-	if config == nil {
-		// 未配置该仓库，忽略事件
-		return nil
+
+	// 默认 ID 1
+	var repoConfigID uint64 = 1
+	if config != nil {
+		repoConfigID = config.ID
+	} else {
+		// 如果未找到配置，但可以通过 URL 识别项目，则继续处理（使用默认 ID 记录日志）
+		// 这允许用户不配数据库也能跑自动部署
 	}
 
 	// 转换状态
@@ -126,18 +134,112 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 		status = devops.PipelineStatusPending
 	}
 
-	// 创建流水线记录
+	// 创建流水线记录 (Logging the event)
 	record := &devops.PipelineRecord{
-		// Global, no ProjectID
-		RepoConfigID: config.ID,
-		ExternalID:   payload.CommitSHA, // 简化：暂时用 SHA 作为 ExternalID，如果是 Pipeline Event 应该用 RunID
+		RepoConfigID: repoConfigID,
+		ExternalID:   payload.CommitSHA,
 		Ref:          payload.Ref,
 		CommitSHA:    payload.CommitSHA,
 		CommitMsg:    payload.CommitMsg,
 		Author:       payload.Author,
 		Status:       status,
-		// Duration, StartedAt 等字段需根据具体 Payload 填充，此处简化
+	}
+
+	// 自动触发部署 (仅当 Push 到 main 分支且状态为 success 时)
+	if status == devops.PipelineStatusSuccess &&
+		(payload.Ref == "refs/heads/main" || payload.Ref == "main") {
+
+		var deployType string
+		// 简单的关键词匹配逻辑 (Pragmatic approach)
+		// 实际应该更严谨，或者在 Config 里配置 "DeployScript"
+		if strings.Contains(payload.RepoURL, "FlowBoard") {
+			deployType = "frontend"
+		} else if strings.Contains(payload.RepoURL, "FlowGo") {
+			deployType = "backend"
+		}
+
+		if deployType != "" {
+			go func() {
+				// Pass deployType to TriggerDeployment
+				if err := s.TriggerDeployment(context.Background(), deployType); err != nil {
+					_ = err
+				}
+			}()
+		}
 	}
 
 	return s.devopsRepo.SavePipelineRecord(ctx, record)
+}
+
+// TriggerDeployment 触发部署
+func (s *DevOpsService) TriggerDeployment(ctx context.Context, deployType string) error {
+	scriptName := "scripts/deploy_backend.sh" // Default
+	commitMsg := "Manual Deployment Trigger"
+
+	if deployType == "frontend" {
+		scriptName = "scripts/deploy_frontend.sh"
+		commitMsg = "Frontend Deployment"
+	} else if deployType == "backend" {
+		scriptName = "scripts/deploy_backend.sh"
+		commitMsg = "Backend Deployment"
+	}
+
+	// 1. 创建一条新的流水线记录
+	record := &devops.PipelineRecord{
+		RepoConfigID: 1, // Global Config ID
+		Status:       devops.PipelineStatusRunning,
+		CommitMsg:    commitMsg,
+		Author:       "System",
+		StartedAt:    nowPtr(),
+	}
+
+	// Try to get actual config (Just for logging purpose, reuse global one)
+	config, _ := s.devopsRepo.GetRepoConfig(ctx)
+	if config != nil {
+		record.RepoConfigID = config.ID
+	}
+
+	if err := s.devopsRepo.SavePipelineRecord(ctx, record); err != nil {
+		return err
+	}
+
+	// 2. 异步执行脚本
+	go func(recordID uint64, script string) {
+		bgCtx := context.Background()
+
+		// Execute shell script
+		cmd := exec.Command("bash", script)
+		// In production, use absolute path
+
+		output, err := cmd.CombinedOutput()
+
+		endTime := time.Now()
+		duration := int64(time.Since(*record.StartedAt).Seconds())
+
+		status := devops.PipelineStatusSuccess
+		if err != nil {
+			status = devops.PipelineStatusFailed
+		}
+
+		updateObj := &devops.PipelineRecord{
+			ID:         recordID,
+			Status:     status,
+			Duration:   duration,
+			FinishedAt: &endTime,
+			CommitMsg:  "Output: " + string(output),
+		}
+		if len(updateObj.CommitMsg) > 500 {
+			updateObj.CommitMsg = updateObj.CommitMsg[:500] + "..."
+		}
+
+		_ = s.devopsRepo.SavePipelineRecord(bgCtx, updateObj)
+
+	}(record.ID, scriptName)
+
+	return nil
+}
+
+func nowPtr() *time.Time {
+	t := time.Now()
+	return &t
 }

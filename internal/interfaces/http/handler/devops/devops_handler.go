@@ -91,3 +91,12 @@ func (h *DevOpsHandler) HandleGitHubWebhook(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 }
+
+// TriggerDeployment 触发部署
+func (h *DevOpsHandler) TriggerDeployment(c *gin.Context) {
+	if err := h.devopsService.TriggerDeployment(c.Request.Context(), "backend"); err != nil {
+		h.HandleInternalError(c, err.Error())
+		return
+	}
+	h.HandleSuccess(c, nil)
+}

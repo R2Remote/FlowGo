@@ -57,6 +57,7 @@ func SetupRouter(
 		{
 			devops.POST("/config", devopsHandler.ConfigRepo)
 			devops.GET("/summary", devopsHandler.GetSummary)
+			devops.POST("/deploy", devopsHandler.TriggerDeployment)
 		}
 
 		// Webhook 路由 (一般不需要认证，或者有专门的签名验证)
