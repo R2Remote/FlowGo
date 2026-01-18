@@ -99,17 +99,18 @@ func (s *DevOpsService) GetSummary(ctx context.Context) (*dto.DevOpsSummaryRespo
 			repoName = "Unknown"
 		}
 		pipelineResps = append(pipelineResps, &dto.PipelineRecordResponse{
-			ID:         r.ID,
-			RepoName:   repoName,
-			Status:     string(r.Status),
-			Ref:        r.Ref,
-			CommitSHA:  r.CommitSHA,
-			CommitMsg:  r.CommitMsg,
-			Author:     r.Author,
-			Duration:   r.Duration,
-			StartedAt:  r.StartedAt,
-			FinishedAt: r.FinishedAt,
-			CreatedAt:  r.CreatedAt,
+			ID:            r.ID,
+			RepoName:      repoName,
+			Status:        string(r.Status),
+			TriggerSource: r.TriggerSource,
+			Ref:           r.Ref,
+			CommitSHA:     r.CommitSHA,
+			CommitMsg:     r.CommitMsg,
+			Author:        r.Author,
+			Duration:      r.Duration,
+			StartedAt:     r.StartedAt,
+			FinishedAt:    r.FinishedAt,
+			CreatedAt:     r.CreatedAt,
 		})
 	}
 
@@ -148,13 +149,14 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 
 	// 创建流水线记录 (Logging the event)
 	record := &devops.PipelineRecord{
-		RepoConfigID: config.ID,
-		ExternalID:   payload.CommitSHA,
-		Ref:          payload.Ref,
-		CommitSHA:    payload.CommitSHA,
-		CommitMsg:    payload.CommitMsg,
-		Author:       payload.Author,
-		Status:       status,
+		RepoConfigID:  config.ID,
+		ExternalID:    payload.CommitSHA,
+		Ref:           payload.Ref,
+		CommitSHA:     payload.CommitSHA,
+		CommitMsg:     payload.CommitMsg,
+		Author:        payload.Author,
+		Status:        status,
+		TriggerSource: "webhook",
 	}
 
 	// 自动触发部署 (仅当 Push 到 main 分支且状态为 success 时)
@@ -192,11 +194,12 @@ func (s *DevOpsService) TriggerDeployment(ctx context.Context, repoConfigID uint
 
 	// 1. 创建一条新的流水线记录
 	record := &devops.PipelineRecord{
-		RepoConfigID: config.ID,
-		Status:       devops.PipelineStatusRunning,
-		CommitMsg:    commitMsg,
-		Author:       "System",
-		StartedAt:    nowPtr(),
+		RepoConfigID:  config.ID,
+		Status:        devops.PipelineStatusRunning,
+		CommitMsg:     commitMsg,
+		Author:        "System",
+		TriggerSource: "manual",
+		StartedAt:     nowPtr(),
 	}
 
 	if err := s.devopsRepo.SavePipelineRecord(ctx, record); err != nil {

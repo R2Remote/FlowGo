@@ -23,17 +23,18 @@ type ConfigRepoResponse struct {
 
 // PipelineRecordResponse 流水线记录响应
 type PipelineRecordResponse struct {
-	ID         uint64     `json:"id"`
-	RepoName   string     `json:"repo_name"` // Add repo name for UI
-	Status     string     `json:"status"`
-	Ref        string     `json:"ref"`
-	CommitSHA  string     `json:"commit_sha"`
-	CommitMsg  string     `json:"commit_msg"`
-	Author     string     `json:"author"`
-	Duration   int64      `json:"duration"`
-	StartedAt  *time.Time `json:"started_at"`
-	FinishedAt *time.Time `json:"finished_at"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID            uint64     `json:"id"`
+	RepoName      string     `json:"repo_name"` // Add repo name for UI
+	Status        string     `json:"status"`
+	TriggerSource string     `json:"trigger_source"`
+	Ref           string     `json:"ref"`
+	CommitSHA     string     `json:"commit_sha"`
+	CommitMsg     string     `json:"commit_msg"`
+	Author        string     `json:"author"`
+	Duration      int64      `json:"duration"`
+	StartedAt     *time.Time `json:"started_at"`
+	FinishedAt    *time.Time `json:"finished_at"`
+	CreatedAt     time.Time  `json:"created_at"`
 }
 
 // DevOpsSummaryResponse DevOps 概览响应
