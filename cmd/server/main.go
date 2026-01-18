@@ -13,14 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"FLOWGO/internal/application/service"
-	"FLOWGO/internal/application/service/devops"
 	"FLOWGO/internal/infrastructure/config"
 	"FLOWGO/internal/infrastructure/database"
 	"FLOWGO/internal/infrastructure/redis"
 	"FLOWGO/internal/infrastructure/repository"
-	devopsRepo "FLOWGO/internal/infrastructure/repository/devops"
 	"FLOWGO/internal/interfaces/http/handler"
-	devopsHandler "FLOWGO/internal/interfaces/http/handler/devops"
 	"FLOWGO/internal/interfaces/http/router"
 	"FLOWGO/pkg/jwt"
 )
@@ -73,22 +70,19 @@ func main() {
 	// 基础设施
 	userRepo := repository.NewUserRepository(database.DB)
 	projectRepo := repository.NewProjectsRepository(database.DB)
-	devopsRepository := devopsRepo.NewDevOpsRepository(database.DB)
 
 	// 应用服务
 	userService := service.NewUserService(userRepo)
 	authService := service.NewAuthService(userRepo)
 	projectService := service.NewProjectService(projectRepo)
-	devopsService := devops.NewDevOpsService(devopsRepository)
 
 	// 控制器
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)
 	projectHandler := handler.NewProjectsHandler(projectService)
-	doHandler := devopsHandler.NewDevOpsHandler(devopsService)
 
 	// 设置路由
-	r := router.SetupRouter(authHandler, userHandler, projectHandler, doHandler)
+	r := router.SetupRouter(authHandler, userHandler, projectHandler)
 
 	// 启动服务器
 	port := config.AppConfig.Server.Port

@@ -2,7 +2,6 @@ package router
 
 import (
 	"FLOWGO/internal/interfaces/http/handler"
-	"FLOWGO/internal/interfaces/http/handler/devops"
 	"FLOWGO/internal/interfaces/http/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,6 @@ func SetupRouter(
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	projectHandler *handler.ProjectsHandler,
-	devopsHandler *devops.DevOpsHandler,
 ) *gin.Engine {
 	r := gin.New()
 
@@ -49,24 +47,6 @@ func SetupRouter(
 			projects.GET("/users/available/:id", projectHandler.ProjectAvailableUsers)
 			projects.POST("/:id/users", projectHandler.AddProjectUsers)
 			projects.DELETE("/:id/users/:uid", projectHandler.RemoveProjectUser)
-		}
-
-		// DevOps SSE 路由 (不做认证以支持 EventSource)
-		v1.GET("/devops/events", devopsHandler.StreamLogs)
-
-		// DevOps 路由 (全局)
-		devops := v1.Group("/devops")
-		devops.Use(middleware.Auth())
-		{
-			devops.POST("/config", devopsHandler.ConfigRepo)
-			devops.GET("/summary", devopsHandler.GetSummary)
-			devops.POST("/deploy", devopsHandler.TriggerDeployment)
-		}
-
-		// Webhook 路由 (一般不需要认证，或者有专门的签名验证)
-		webhooks := v1.Group("/webhooks")
-		{
-			webhooks.POST("/github", devopsHandler.HandleGitHubWebhook)
 		}
 
 		// 用户相关路由
