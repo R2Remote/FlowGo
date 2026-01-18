@@ -94,7 +94,15 @@ func (h *DevOpsHandler) HandleGitHubWebhook(c *gin.Context) {
 
 // TriggerDeployment 触发部署
 func (h *DevOpsHandler) TriggerDeployment(c *gin.Context) {
-	if err := h.devopsService.TriggerDeployment(c.Request.Context(), "backend"); err != nil {
+	var req struct {
+		ConfigID uint64 `json:"config_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		h.HandleBadRequest(c, "Invalid request parameters")
+		return
+	}
+
+	if err := h.devopsService.TriggerDeployment(c.Request.Context(), req.ConfigID); err != nil {
 		h.HandleInternalError(c, err.Error())
 		return
 	}

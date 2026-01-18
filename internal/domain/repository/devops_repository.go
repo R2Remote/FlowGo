@@ -8,8 +8,10 @@ import (
 // DevOpsRepository DevOps 仓储接口
 type DevOpsRepository interface {
 	// RepoConfig
+	// RepoConfig
 	SaveRepoConfig(ctx context.Context, config *devops.RepoConfig) error
-	GetRepoConfig(ctx context.Context) (*devops.RepoConfig, error)
+	GetRepoConfig(ctx context.Context, id uint64) (*devops.RepoConfig, error)
+	ListRepoConfigs(ctx context.Context) ([]*devops.RepoConfig, error)
 	GetRepoConfigByRepoURL(ctx context.Context, repoURL string) (*devops.RepoConfig, error)
 	DeleteRepoConfig(ctx context.Context, id uint64) error
 

@@ -7,8 +7,10 @@ import (
 // RepoConfigPO 仓库配置持久化对象
 type RepoConfigPO struct {
 	BasePO
+	Name          string `gorm:"type:varchar(100);not null"`
 	Type          string `gorm:"type:varchar(20);not null"`
 	RepoURL       string `gorm:"type:varchar(255);not null"`
+	DeployScript  string `gorm:"type:varchar(255)"`
 	AccessToken   string `gorm:"type:varchar(255)"`
 	WebhookSecret string `gorm:"type:varchar(100)"`
 }

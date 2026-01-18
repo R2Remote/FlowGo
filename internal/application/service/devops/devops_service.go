@@ -9,7 +9,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -23,17 +22,22 @@ func NewDevOpsService(devopsRepo repository.DevOpsRepository) *DevOpsService {
 	}
 }
 
-// ConfigRepo 配置全局仓库
+// ConfigRepo 配置仓库
 func (s *DevOpsService) ConfigRepo(ctx context.Context, req dto.ConfigRepoRequest) (*dto.ConfigRepoResponse, error) {
-	// 1. 检查是否存在配置，如果存在则更新，否则创建
-	config, err := s.devopsRepo.GetRepoConfig(ctx)
-	if err != nil {
-		return nil, errors.New("查询仓库配置失败")
-	}
+	var config *devops.RepoConfig
+	var err error
 
-	if config == nil {
+	if req.ID > 0 {
+		config, err = s.devopsRepo.GetRepoConfig(ctx, req.ID)
+		if err != nil {
+			return nil, errors.New("查询仓库配置失败")
+		}
+		if config == nil {
+			return nil, errors.New("仓库配置不存在")
+		}
+	} else {
 		config = &devops.RepoConfig{
-			// Global, no ProjectID
+			// New record
 		}
 		// 生成 Webhook Secret
 		bytes := make([]byte, 16)
@@ -42,8 +46,10 @@ func (s *DevOpsService) ConfigRepo(ctx context.Context, req dto.ConfigRepoReques
 		}
 	}
 
+	config.Name = req.Name
 	config.Type = devops.RepoType(req.Type)
 	config.RepoURL = req.RepoURL
+	config.DeployScript = req.DeployScript
 	if req.AccessToken != "" {
 		config.AccessToken = req.AccessToken // 实际场景应加密存储
 	}
@@ -53,52 +59,63 @@ func (s *DevOpsService) ConfigRepo(ctx context.Context, req dto.ConfigRepoReques
 	}
 
 	return &dto.ConfigRepoResponse{
-		ID:      config.ID,
-		RepoURL: config.RepoURL,
+		ID:           config.ID,
+		Name:         config.Name,
+		RepoURL:      config.RepoURL,
+		DeployScript: config.DeployScript,
 	}, nil
 }
 
 // GetSummary 获取 DevOps 概览
 func (s *DevOpsService) GetSummary(ctx context.Context) (*dto.DevOpsSummaryResponse, error) {
-	config, err := s.devopsRepo.GetRepoConfig(ctx)
+	configs, err := s.devopsRepo.ListRepoConfigs(ctx)
 	if err != nil {
 		return nil, errors.New("查询仓库配置失败")
 	}
 
-	var repoResp *dto.ConfigRepoResponse
+	var serviceResps []*dto.ConfigRepoResponse
+	configMap := make(map[uint64]string)
+
+	for _, c := range configs {
+		serviceResps = append(serviceResps, &dto.ConfigRepoResponse{
+			ID:           c.ID,
+			Name:         c.Name,
+			RepoURL:      c.RepoURL,
+			DeployScript: c.DeployScript,
+		})
+		configMap[c.ID] = c.Name
+	}
+
 	var pipelineResps []*dto.PipelineRecordResponse
+	// 查询最近的流水线记录
+	records, err := s.devopsRepo.ListPipelineRecords(ctx, 10)
+	if err != nil {
+		return nil, errors.New("查询流水线记录失败")
+	}
 
-	if config != nil {
-		repoResp = &dto.ConfigRepoResponse{
-			ID:      config.ID,
-			RepoURL: config.RepoURL,
+	for _, r := range records {
+		repoName := configMap[r.RepoConfigID]
+		if repoName == "" {
+			repoName = "Unknown"
 		}
-
-		// 查询最近的流水线记录
-		records, err := s.devopsRepo.ListPipelineRecords(ctx, 10)
-		if err != nil {
-			return nil, errors.New("查询流水线记录失败")
-		}
-
-		for _, r := range records {
-			pipelineResps = append(pipelineResps, &dto.PipelineRecordResponse{
-				ID:         r.ID,
-				Status:     string(r.Status),
-				Ref:        r.Ref,
-				CommitSHA:  r.CommitSHA,
-				CommitMsg:  r.CommitMsg,
-				Author:     r.Author,
-				Duration:   r.Duration,
-				StartedAt:  r.StartedAt,
-				FinishedAt: r.FinishedAt,
-				CreatedAt:  r.CreatedAt,
-			})
-		}
+		pipelineResps = append(pipelineResps, &dto.PipelineRecordResponse{
+			ID:         r.ID,
+			RepoName:   repoName,
+			Status:     string(r.Status),
+			Ref:        r.Ref,
+			CommitSHA:  r.CommitSHA,
+			CommitMsg:  r.CommitMsg,
+			Author:     r.Author,
+			Duration:   r.Duration,
+			StartedAt:  r.StartedAt,
+			FinishedAt: r.FinishedAt,
+			CreatedAt:  r.CreatedAt,
+		})
 	}
 
 	return &dto.DevOpsSummaryResponse{
-		RepoConfig: repoResp,
-		Pipelines:  pipelineResps,
+		Services:  serviceResps,
+		Pipelines: pipelineResps,
 	}, nil
 }
 
@@ -109,14 +126,9 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 	if err != nil {
 		return errors.New("查询仓库配置失败")
 	}
-
-	// 默认 ID 1
-	var repoConfigID uint64 = 1
-	if config != nil {
-		repoConfigID = config.ID
-	} else {
-		// 如果未找到配置，但可以通过 URL 识别项目，则继续处理（使用默认 ID 记录日志）
-		// 这允许用户不配数据库也能跑自动部署
+	if config == nil {
+		// 未配置该仓库，忽略事件
+		return nil
 	}
 
 	// 转换状态
@@ -136,7 +148,7 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 
 	// 创建流水线记录 (Logging the event)
 	record := &devops.PipelineRecord{
-		RepoConfigID: repoConfigID,
+		RepoConfigID: config.ID,
 		ExternalID:   payload.CommitSHA,
 		Ref:          payload.Ref,
 		CommitSHA:    payload.CommitSHA,
@@ -149,19 +161,11 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 	if status == devops.PipelineStatusSuccess &&
 		(payload.Ref == "refs/heads/main" || payload.Ref == "main") {
 
-		var deployType string
-		// 简单的关键词匹配逻辑 (Pragmatic approach)
-		// 实际应该更严谨，或者在 Config 里配置 "DeployScript"
-		if strings.Contains(payload.RepoURL, "FlowBoard") {
-			deployType = "frontend"
-		} else if strings.Contains(payload.RepoURL, "FlowGo") {
-			deployType = "backend"
-		}
-
-		if deployType != "" {
+		// 直接使用 Config 里的 DeployScript
+		if config.DeployScript != "" {
 			go func() {
-				// Pass deployType to TriggerDeployment
-				if err := s.TriggerDeployment(context.Background(), deployType); err != nil {
+				// Pass ID to TriggerDeployment
+				if err := s.TriggerDeployment(context.Background(), config.ID); err != nil {
 					_ = err
 				}
 			}()
@@ -172,32 +176,27 @@ func (s *DevOpsService) HandleWebhook(ctx context.Context, payload dto.WebhookPa
 }
 
 // TriggerDeployment 触发部署
-func (s *DevOpsService) TriggerDeployment(ctx context.Context, deployType string) error {
-	scriptName := "/home/deploy_backend.sh" // Default
-	commitMsg := "Manual Deployment Trigger"
-
-	switch deployType {
-	case "frontend":
-		scriptName = "/home/deploy_frontend.sh"
-		commitMsg = "Frontend Deployment"
-	case "backend":
-		scriptName = "/home/deploy_backend.sh"
-		commitMsg = "Backend Deployment"
+func (s *DevOpsService) TriggerDeployment(ctx context.Context, repoConfigID uint64) error {
+	// Fetch config to get script path
+	config, err := s.devopsRepo.GetRepoConfig(ctx, repoConfigID)
+	if err != nil || config == nil {
+		return errors.New("配置不存在")
 	}
+
+	if config.DeployScript == "" {
+		return errors.New("未配置部署脚本")
+	}
+
+	scriptName := config.DeployScript
+	commitMsg := "Manual Deployment Trigger"
 
 	// 1. 创建一条新的流水线记录
 	record := &devops.PipelineRecord{
-		RepoConfigID: 1, // Global Config ID
+		RepoConfigID: config.ID,
 		Status:       devops.PipelineStatusRunning,
 		CommitMsg:    commitMsg,
 		Author:       "System",
 		StartedAt:    nowPtr(),
-	}
-
-	// Try to get actual config (Just for logging purpose, reuse global one)
-	config, _ := s.devopsRepo.GetRepoConfig(ctx)
-	if config != nil {
-		record.RepoConfigID = config.ID
 	}
 
 	if err := s.devopsRepo.SavePipelineRecord(ctx, record); err != nil {
@@ -209,8 +208,8 @@ func (s *DevOpsService) TriggerDeployment(ctx context.Context, deployType string
 		bgCtx := context.Background()
 
 		// Execute shell script
+		// Use bash explicitely
 		cmd := exec.Command("bash", script)
-		// In production, use absolute path
 
 		output, err := cmd.CombinedOutput()
 

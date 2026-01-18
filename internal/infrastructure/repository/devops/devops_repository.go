@@ -26,11 +26,10 @@ func (r *devopsRepository) SaveRepoConfig(ctx context.Context, config *devops.Re
 	return r.db.WithContext(ctx).Save(po).Error
 }
 
-// GetRepoConfig 获取全局仓库配置 (Singleton)
-func (r *devopsRepository) GetRepoConfig(ctx context.Context) (*devops.RepoConfig, error) {
+// GetRepoConfig 获取仓库配置
+func (r *devopsRepository) GetRepoConfig(ctx context.Context, id uint64) (*devops.RepoConfig, error) {
 	var po dao.RepoConfigPO
-	// Assuming only one record or getting the latest/first
-	err := r.db.WithContext(ctx).First(&po).Error
+	err := r.db.WithContext(ctx).First(&po, id).Error
 	if err == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
@@ -38,6 +37,21 @@ func (r *devopsRepository) GetRepoConfig(ctx context.Context) (*devops.RepoConfi
 		return nil, err
 	}
 	return r.toRepoConfigEntity(&po), nil
+}
+
+// ListRepoConfigs 获取所有仓库配置
+func (r *devopsRepository) ListRepoConfigs(ctx context.Context) ([]*devops.RepoConfig, error) {
+	var pos []*dao.RepoConfigPO
+	err := r.db.WithContext(ctx).Find(&pos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	configs := make([]*devops.RepoConfig, len(pos))
+	for i, po := range pos {
+		configs[i] = r.toRepoConfigEntity(po)
+	}
+	return configs, nil
 }
 
 // GetRepoConfigByRepoURL 根据仓库URL获取配置
@@ -125,9 +139,10 @@ func (r *devopsRepository) toRepoConfigPO(e *devops.RepoConfig) *dao.RepoConfigP
 			CreatedAt: e.CreatedAt,
 			UpdatedAt: e.UpdatedAt,
 		},
-		// ProjectID removed
+		Name:          e.Name,
 		Type:          string(e.Type),
 		RepoURL:       e.RepoURL,
+		DeployScript:  e.DeployScript,
 		AccessToken:   e.AccessToken,
 		WebhookSecret: e.WebhookSecret,
 	}
@@ -135,10 +150,11 @@ func (r *devopsRepository) toRepoConfigPO(e *devops.RepoConfig) *dao.RepoConfigP
 
 func (r *devopsRepository) toRepoConfigEntity(po *dao.RepoConfigPO) *devops.RepoConfig {
 	return &devops.RepoConfig{
-		ID: po.ID,
-		// ProjectID removed
+		ID:            po.ID,
+		Name:          po.Name,
 		Type:          devops.RepoType(po.Type),
 		RepoURL:       po.RepoURL,
+		DeployScript:  po.DeployScript,
 		AccessToken:   po.AccessToken,
 		WebhookSecret: po.WebhookSecret,
 		CreatedAt:     po.CreatedAt,
