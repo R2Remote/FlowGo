@@ -1,17 +1,16 @@
 server:
-  port: 8080
-  mode: debug
+  port: "8080"
+  mode: "debug"
 
 database:
-  driver: mysql
-  dsn: "root:password@tcp(127.0.0.1:3306)/flowgo?charset=utf8mb4&parseTime=True&loc=Local"
-  max_idle_conns: 10
+  host: "127.0.0.1"
+  port: "3306"
+  user: "root"
+  password: "123456"    # 这里填您刚才在数据库里设置的密码
+  db_name: "flowgo"
   max_open_conns: 100
+  max_idle_conns: 10
 
 jwt:
-  secret: "your-secret-key-change-me"
-  expire_duration: 24h
-
-log:
-  level: debug
-  filename: "app.log"
+  secret_key: "your-secret-key-change-me"
+  expiration: 24
