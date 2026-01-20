@@ -12,6 +12,7 @@ func SetupRouter(
 	authHandler *handler.AuthHandler,
 	userHandler *handler.UserHandler,
 	projectHandler *handler.ProjectsHandler,
+	statsHandler *handler.StatsHandler,
 ) *gin.Engine {
 	r := gin.New()
 
@@ -19,6 +20,7 @@ func SetupRouter(
 	r.Use(middleware.Logger())
 	r.Use(middleware.Recovery())
 	r.Use(middleware.CORS())
+	r.Use(middleware.VisitLogger())
 
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
@@ -56,6 +58,13 @@ func SetupRouter(
 			users.POST("", userHandler.CreateUser)
 			users.GET("", userHandler.ListUsers)
 			users.GET("/:id", userHandler.GetUser)
+		}
+
+		// 统计 API
+		stats := v1.Group("/stats")
+		// stats.Use(middleware.Auth()) // 根据需求决定是否需要鉴权，这里暂时公开方便查看，或者加 Auth
+		{
+			stats.GET("/visits", statsHandler.GetVisitStats)
 		}
 	}
 

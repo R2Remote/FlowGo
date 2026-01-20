@@ -80,9 +80,10 @@ func main() {
 	userHandler := handler.NewUserHandler(userService)
 	authHandler := handler.NewAuthHandler(authService)
 	projectHandler := handler.NewProjectsHandler(projectService)
+	statsHandler := handler.NewStatsHandler()
 
 	// 设置路由
-	r := router.SetupRouter(authHandler, userHandler, projectHandler)
+	r := router.SetupRouter(authHandler, userHandler, projectHandler, statsHandler)
 
 	// 启动服务器
 	port := config.AppConfig.Server.Port

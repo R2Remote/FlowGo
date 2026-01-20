@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"FLOWGO/internal/domain/entity"
 	"FLOWGO/internal/infrastructure/config"
 )
 
@@ -31,6 +32,17 @@ func InitDB() error {
 
 	if err != nil {
 		return fmt.Errorf("failed to connect database: %w", err)
+	}
+
+	// 自动迁移数据库结构
+	err = DB.AutoMigrate(
+		&entity.User{},
+		&entity.Project{},
+		&entity.Team{},
+		&entity.VisitStat{}, // IP 统计
+	)
+	if err != nil {
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
 
 	// Enable Foreign Keys for SQLite
