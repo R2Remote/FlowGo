@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"ChronoGo/sdk/worker"
 	"FLOWGO/internal/application/service"
 	"FLOWGO/internal/infrastructure/config"
 	"FLOWGO/internal/infrastructure/database"
@@ -84,6 +85,14 @@ func main() {
 
 	// 设置路由
 	r := router.SetupRouter(authHandler, userHandler, projectHandler, statsHandler)
+
+	// 加载定时任务
+	wk := worker.NewWorker()
+	wk.RegisterHandler("some_task", func(params string) error {
+		log.Println("some_task", params)
+		return nil
+	})
+	go wk.Start(8888)
 
 	// 启动服务器
 	port := config.AppConfig.Server.Port
