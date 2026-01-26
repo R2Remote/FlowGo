@@ -20,12 +20,18 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Extract Docker metadata
+        id: meta
+        run: |
+          DOCKER_USER=$(echo "${{ secrets.DOCKER_USERNAME }}" | tr '[:upper:]' '[:lower:]')
+          echo "image_tag=$DOCKER_USER/flowgo:latest" >> $GITHUB_OUTPUT
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/flowgo:latest
+          tags: ${{ steps.meta.outputs.image_tag }}
 
       - name: Trigger OpsGo Deployment
         if: success()
