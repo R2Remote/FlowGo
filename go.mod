@@ -3,7 +3,7 @@ module FLOWGO
 go 1.25.0
 
 require (
-	ChronoGo v0.0.0-00010101000000-000000000000
+	github.com/R2Remote/ChronoGo v0.0.0-20260127150259-2cd31aeb1fd9
 	github.com/gin-gonic/gin v1.11.0
 	github.com/glebarez/sqlite v1.11.0
 	github.com/golang-jwt/jwt/v5 v5.3.0
@@ -66,5 +66,3 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.44.2 // indirect
 )
-
-replace ChronoGo => ../ChronoGo

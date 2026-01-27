@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"ChronoGo/sdk/worker"
 	"FLOWGO/internal/application/service"
 	"FLOWGO/internal/infrastructure/config"
 	"FLOWGO/internal/infrastructure/database"
@@ -21,6 +20,8 @@ import (
 	"FLOWGO/internal/interfaces/http/handler"
 	"FLOWGO/internal/interfaces/http/router"
 	"FLOWGO/pkg/jwt"
+
+	"github.com/R2Remote/ChronoGo/sdk/worker"
 )
 
 func main() {
